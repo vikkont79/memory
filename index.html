@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Игра Мемори</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="vendor/react.development.js"></script>
+  <script src="vendor/react-dom.development.js"></script>
+  <script src="vendor/babel.min.js"></script>
+  <script src="vendor/get-declension.min.umd.js"></script>
+  <script src="data.js"></script>
+  <script src="settings.js"></script>
+</head>
+
+<body>
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+  <div id="root"></div>
+  <script type="text/babel">
+    const container = document.getElementById('root');
+    const root = ReactDOM.createRoot(container);
+    root.render(<App getImages={getImages} results={results} />)
+
+    function App({ getImages, results = [] }) {
+      const [page, setPage] = React.useState(AppRoute.Start);
+      const [result, setResult] = React.useState(0);
+      const [images, setImages] = React.useState([]);
+      const [cardsType, setCardsType] = React.useState(null);
+
+      const showResults = (stepsCount) => {
+        setResult(stepsCount);
+        setPage(AppRoute.Results);
+      };
+
+      const handleReset = () => {
+        setPage(AppRoute.Start);
+      };
+
+      const handleStart = (type) => {
+        setImages(getImages(type));
+        setCardsType(type);
+        setPage(AppRoute.Game);
+      };
+
+      const getPage = (route) => {
+        switch (route) {
+          case AppRoute.Start:
+            return <StartPage onStart={handleStart} />
+          case AppRoute.Game:
+            return <GamePage images={images} type={cardsType} onShowResults={showResults} />;
+          case AppRoute.Results:
+            return (
+              <ResultsPage results={results} playerResult={result} onResetGame={handleReset}
+              />
+            );
+          default:
+            return null;
+        }
+      };
+      return getPage(page);
+    }
+
+    const useGame = (images) => {
+      const [finishedItems, setFinishedItems] = React.useState([])
+      const [stepsCount, setStepsCount] = React.useState(0);
+
+      const checkItems = (firstItem, secondItem) => {
+        const firstImage = images.find((item) => item.id === firstItem);
+        const secondImage = images.find((item) => item.id === secondItem);
+        if (firstImage.url === secondImage.url) {
+          setFinishedItems((state) => [...state, firstItem, secondItem]);
+        }
+        setStepsCount((state) => state + 1);
+      };
+
+      const isGameOver = finishedItems.length > 0 && finishedItems.length === images.length;
+
+      return {
+        finishedItems,
+        stepsCount,
+        checkItems,
+        isGameOver,
+      }
+    };
+
+    function StartPage({ onStart }) {
+      const handleStart = (type) => {
+        onStart(type);
+      }
+
+      return (
+        <section className="rules container">
+          <h2>Добро пожаловать!</h2>
+          <p>Memory — игра для тренировки визуальной памяти</p>
+          <div className="rules-panel">
+            <h3>Правила игры</h3>
+            <ul className="rules-list">
+              <li>В наборе есть множество карточек – по две штуки с одним и тем же рисунком.</li>
+              <li>Нужно разложить карточки «рубашкой» вверх на столе, а затем переворачивать по две.</li>
+              <li>Если они совпадают – игрок забирает их и получает ещё один ход.</li>
+            </ul>
+          </div>
+          {GAME_TYPES.map(({ type, text }) => (
+            <button
+              key={type}
+              onClick={() => handleStart(type)}
+              className={`ico-button ico-button-${type}`}
+              type="button">
+              {text}
+            </button>
+          ))}
+        </section>
+      );
+    }
+
+    function GamePage({ images = [], type, onShowResults }) {
+      const {
+        finishedItems,
+        stepsCount,
+        checkItems,
+        isGameOver,
+      } = useGame(images);
+
+      const handleResultsClick = () => {
+        onShowResults(stepsCount);
+      };
+
+      return (
+        <section className="game container">
+          <Progress images={images} finishedItems={finishedItems} stepsCount={stepsCount} />
+          <CardsList images={images} finishedItems={finishedItems} type={type} checkItems={checkItems} />
+          {isGameOver && (
+            <Modal>
+              <h3 className="modal-caption">Победа!</h3>
+              <p className="modal-description">Теперь давайте узнаем результаты этой партии</p>
+              <button onClick={handleResultsClick} className="button modal-button" type="button">Показать результаты</button>
+            </Modal>
+          )}
+        </section>
+      )
+    }
+
+    function Progress({ images = [], finishedItems = [], stepsCount }) {
+      const progress = finishedItems.length / images.length * 100;
+      return (
+        <>
+          <div className="progress-wrapper">
+            <div className="progress" style={{ width: `${progress}%` }}></div>
+          </div>
+          <p className="progress-description">Открыто <span>{finishedItems.length / 2}</span> / <span>{images.length / 2}</span></p>
+          <div className="steps">Шаг {stepsCount}</div>
+        </>
+      );
+    }
+
+    function CardsList({ images = [], finishedItems = [], type, checkItems }) {
+      const [visibleItems, setVisibleItems] = React.useState([]);
+      const handleCardClick = (id) => {
+        if (visibleItems.includes(id)) {
+          return
+        }
+        switch (visibleItems.length) {
+          case 0:
+            setVisibleItems([id]);
+            break;
+          case 1:
+            const firstId = visibleItems[0];
+            setVisibleItems((state) => [...state, id]);
+            checkItems(firstId, id);
+            setTimeout(() => {
+              setVisibleItems([])
+            }, TIMEOUT);
+            break;
+          default:
+            setVisibleItems([])
+        }
+      };
+
+      return (
+        <ul className={`cards cards-theme-${type}`}>
+          {images.map((item) => (
+            <Card
+              key={item.id}
+              {...item}
+              isShown={visibleItems.includes(item.id)}
+              isFinished={finishedItems.includes(item.id)}
+              onCardClick={handleCardClick}
+            />
+          ))}
+        </ul>
+      );
+    }
+
+    function Card({ id, url, description, isShown, isFinished, onCardClick }) {
+      const className = `${isShown ? `card-show` : ''} ${isFinished ? `card-finished` : ''}`;
+      const handleClick = () => {
+        if (isFinished) {
+          return
+        }
+        onCardClick(id);
+      };
+      return (
+        <li onClick={handleClick}
+          className={`card ${className}`}>
+          <img
+            src={url}
+            width="204" height="144"
+            alt={description} />
+        </li>
+      );
+    }
+
+    function Modal({ children }) {
+      return (
+        <div className="modal">
+          <div className="modal-box">
+            {children}
+          </div>
+        </div>
+      );
+    }
+
+    function ResultsPage({ results, playerResult, onResetGame }) {
+      const stepDeclension = getDeclension({
+        count: playerResult,
+        one: 'шаг', few: 'шага', many: 'шагов'
+      });
+
+      return (
+        <section className="result container">
+          <h2>Лучшие результаты:</h2>
+          <p>Вы завершили игру за <b>{stepDeclension}</b>, так держать!</p>
+          <ResultsTable results={results} playerResult={playerResult} />
+          <p>Хотите попробовать ещё раз?</p>
+          <button onClick={onResetGame} className="button result-button" type="button">Новая игра</button>
+        </section>
+      );
+    }
+
+    function ResultsTable({ results, playerResult }) {
+      const sortedResults = [
+        ...results,
+        { name: 'Ваш результат', stepsCount: playerResult }
+      ].sort((a, b) => a.stepsCount - b.stepsCount);
+
+      return (
+        <table className="result-table">
+          <thead>
+            <tr className="result-table-row">
+              <th>Место</th>
+              <th>Имя</th>
+              <th>Шаги</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sortedResults.map(({ name, stepsCount }, index) => (
+              <tr key={name} className={`result-table-row ${stepsCount === playerResult ? 'active' : ''}`}>
+                <td>{index + 1}</td>
+                <td>{name}</td>
+                <td>{stepsCount}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      );
+    }
+  </script>
+</body>
+
+</html>
