@@ -1,3 +1,5 @@
+import { RANDOMIZE } from './settings';
+
 const cats = [{
   'id': 'YdAqiUkUoWA',
   'url': 'img/cats-1.jpg',
@@ -93,3 +95,8 @@ const getImages = (type) => {
   ]);
   return RANDOMIZE ? [...items].sort(() => 0.5 - Math.random()) : items;
 }
+
+export {
+  results,
+  getImages,
+};

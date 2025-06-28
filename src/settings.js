@@ -13,4 +13,11 @@ const GAME_TYPES = [
   { type: 'cars', icon: 'cars', label: 'Машины' }
 ];
 
-const RANDOMIZE = true;
+const RANDOMIZE = false;
+
+export {
+  TIMEOUT,
+  AppRoute,
+  GAME_TYPES,
+  RANDOMIZE,
+}
