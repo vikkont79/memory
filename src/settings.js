@@ -13,7 +13,7 @@ const GAME_TYPES = [
   { type: 'cars', icon: 'cars', label: 'Машины' }
 ];
 
-const RANDOMIZE = false;
+const RANDOMIZE = true;
 
 export {
   TIMEOUT,
