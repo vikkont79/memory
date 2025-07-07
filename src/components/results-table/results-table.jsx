@@ -1,10 +1,7 @@
 import React from 'react';
 
-function ResultsTable({ results, playerResult }) {
-  const sortedResults = [
-    ...results,
-    { name: 'Ваш результат', stepsCount: playerResult }
-  ].sort((a, b) => a.stepsCount - b.stepsCount);
+function ResultsTable({ results, playerName }) {
+  const sortedResults = [...results].sort((a, b) => a.steps - b.steps);
 
   return (
     <table className="result-table">
@@ -16,11 +13,11 @@ function ResultsTable({ results, playerResult }) {
         </tr>
       </thead>
       <tbody>
-        {sortedResults.map(({ name, stepsCount }, index) => (
-          <tr key={name} className={`result-table-row ${stepsCount === playerResult ? 'active' : ''}`}>
+        {sortedResults.map(({ name, steps }, index) => (
+          <tr key={name} className={`result-table-row ${name === playerName ? 'active' : ''}`}>
             <td>{index + 1}</td>
             <td>{name}</td>
-            <td>{stepsCount}</td>
+            <td>{steps}</td>
           </tr>
         ))}
       </tbody>

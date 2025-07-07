@@ -6,13 +6,22 @@ import { ResultsPage } from '../results-page/results-page.jsx';
 import { StartPage } from '../start-page/start-page.jsx';
 import { Route, Routes, useNavigate } from 'react-router-dom';
 
-function App({ getImages, results = [] }) {
+function App({ getImages }) {
   const navigate = useNavigate();
   const [result, setResult] = useState(0);
   const [images, setImages] = useState([]);
+  const [playerName, setPlayerName] = useState('');
   const [cardsType, setCardsType] = useState(null);
 
+  const [results, setResults] = useState(() => {
+    const saved = localStorage.getItem('game-results');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const showResults = (stepsCount) => {
+    const newResults = [...results, { name: playerName, steps: stepsCount }];
+    setResults(newResults);
+    localStorage.setItem('game-results', JSON.stringify(newResults));
     setResult(stepsCount);
     navigate(AppRoute.Results);
   };
@@ -21,9 +30,10 @@ function App({ getImages, results = [] }) {
     navigate(AppRoute.Start);
   };
 
-  const handleStart = (type) => {
+  const handleStart = (type, name) => {
     setImages(getImages(type));
     setCardsType(type);
+    setPlayerName(name);
     navigate(AppRoute.Game);
   };
 
@@ -31,12 +41,16 @@ function App({ getImages, results = [] }) {
     <Routes>
       <Route index element={<StartPage onStart={handleStart} />} />
       <Route
+        path={AppRoute.Start}
+        element={<StartPage onStart={handleStart} />} />
+      <Route
         path={AppRoute.Game}
         element={
           <GamePage
             images={images}
             type={cardsType}
-            onShowResults={showResults} />}
+            onShowResults={showResults}
+          />}
       />
       <Route
         path={AppRoute.Results}
@@ -44,6 +58,7 @@ function App({ getImages, results = [] }) {
           <ResultsPage
             results={results}
             playerResult={result}
+            playerName={playerName}
             onResetGame={handleReset}
           />}
       />
