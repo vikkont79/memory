@@ -2,9 +2,9 @@
 const TIMEOUT = 900;
 
 const AppRoute = {
-  Start: 'start',
-  Game: 'game',
-  Results: 'results',
+  Start: '/start',
+  Game: '/game',
+  Results: '/results',
 };
 
 const GAME_TYPES = [

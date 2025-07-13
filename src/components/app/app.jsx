@@ -4,7 +4,8 @@ import { AppRoute } from '../../settings';
 import { GamePage } from '../game-page/game-page.jsx';
 import { ResultsPage } from '../results-page/results-page.jsx';
 import { StartPage } from '../start-page/start-page.jsx';
-import { Route, Routes, useNavigate } from 'react-router-dom';
+import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
+import { PrivateRoute } from '../private-route/private-route.jsx';
 
 function App({ getImages }) {
   const navigate = useNavigate();
@@ -39,18 +40,24 @@ function App({ getImages }) {
 
   return (
     <Routes>
-      <Route index element={<StartPage onStart={handleStart} />} />
+      <Route index element={<Navigate to={AppRoute.Start} replace />} />
       <Route
         path={AppRoute.Start}
         element={<StartPage onStart={handleStart} />} />
       <Route
         path={AppRoute.Game}
         element={
-          <GamePage
-            images={images}
-            type={cardsType}
-            onShowResults={showResults}
-          />}
+          <PrivateRoute
+            condition={images.length > 0}
+            fallback={AppRoute.Start}
+          >
+            <GamePage
+              images={images}
+              type={cardsType}
+              onShowResults={showResults}
+            />
+          </PrivateRoute>
+        }
       />
       <Route
         path={AppRoute.Results}
@@ -62,6 +69,7 @@ function App({ getImages }) {
             onResetGame={handleReset}
           />}
       />
+      <Route path="*" element={<Navigate to={AppRoute.Start} replace />} />
     </Routes>
   )
 }
